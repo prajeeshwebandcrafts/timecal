@@ -38,6 +38,13 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+        .operation-display {
+            font-size: 18px;
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -90,11 +97,15 @@
             <input id="minutes" class="time-input" type="number" min="0" max="59" placeholder="0" />m
             <input id="seconds" class="time-input" type="number" min="0" max="59" placeholder="0" />s
         </div>
+
+        <!-- Displaying the current operation dynamically -->
+        <div id="operation-display" class="operation-display">Current Operation: None</div>
+
         <div class="buttons">
-            <button class="button" onclick="setOperation('add')">+</button>
-            <button class="button" onclick="setOperation('subtract')">-</button>
-            <button class="button" onclick="setOperation('multiply')">×</button>
-            <button class="button" onclick="setOperation('divide')">÷</button>
+            <button class="button operator" onclick="setOperation('add')">+</button>
+            <button class="button operator" onclick="setOperation('subtract')">-</button>
+            <button class="button operator" onclick="setOperation('multiply')">×</button>
+            <button class="button operator" onclick="setOperation('divide')">÷</button>
             <button class="button equals" onclick="calculate()">=</button>
             <button class="button clear" onclick="clearDisplay()">C</button>
         </div>
@@ -106,6 +117,7 @@
         let storedHours = 0, storedMinutes = 0, storedSeconds = 0;
         let currentOperation = null;
         const historyElement = document.getElementById("history");
+        const operationDisplay = document.getElementById("operation-display");
 
         function getInputValues() {
             return {
@@ -115,19 +127,34 @@
             };
         }
 
-        function setInputValues(hours, minutes, seconds) {
-            document.getElementById("hours").value = hours;
-            document.getElementById("minutes").value = minutes;
-            document.getElementById("seconds").value = seconds;
-        }
-
         function setOperation(operation) {
             const { hours, minutes, seconds } = getInputValues();
             storedHours = hours;
             storedMinutes = minutes;
             storedSeconds = seconds;
             currentOperation = operation;
+            updateOperationDisplay();
             clearInputs(); // Clear inputs for the next entry
+        }
+
+        function updateOperationDisplay() {
+            const { hours, minutes, seconds } = getInputValues();
+            operationDisplay.innerText = `Current Operation: ${hours}h ${minutes}m ${seconds}s ${getOperationSymbol()}...`;
+        }
+
+        function getOperationSymbol() {
+            switch (currentOperation) {
+                case 'add':
+                    return '+';
+                case 'subtract':
+                    return '-';
+                case 'multiply':
+                    return '×';
+                case 'divide':
+                    return '÷';
+                default:
+                    return '';
+            }
         }
 
         function calculate() {
@@ -161,24 +188,31 @@
             const resultMinutes = Math.floor((resultInSeconds % 3600) / 60);
             const resultSeconds = Math.floor(resultInSeconds % 60);
 
-            setInputValues(resultHours, resultMinutes, resultSeconds);
-            addToHistory(storedHours, storedMinutes, storedSeconds, currentOperation, resultHours, resultMinutes, resultSeconds);
+            addToHistory(storedHours, storedMinutes, storedSeconds, hours, minutes, seconds, currentOperation, resultHours, resultMinutes, resultSeconds);
             currentOperation = null; // Reset operation
+            operationDisplay.innerText = `Current Operation: None`; // Clear the operation display
+            clearInputs(); // Clear the inputs after calculation
+        }
+
+        function addToHistory(h1, m1, s1, h2, m2, s2, operation, resultH, resultM, resultS) {
+            const operationSymbol = operation === 'add' ? '+' : operation === 'subtract' ? '-' : operation === 'multiply' ? '×' : '÷';
+            const entry = document.createElement("div");
+            entry.className = "history-entry";
+            entry.innerText = `${h1}h ${m1}m ${s1}s ${operationSymbol} ${h2}h ${m2}m ${s2}s = ${resultH}h ${resultM}m ${resultS}s`;
+            historyElement.prepend(entry); // Adds entry to the beginning of history
         }
 
         function clearDisplay() {
             setInputValues(0, 0, 0);
             storedHours = storedMinutes = storedSeconds = 0;
             currentOperation = null;
-            historyElement.innerHTML = ''; // Clear history
+            operationDisplay.innerText = "Current Operation: None"; // Reset operation display
         }
 
-        function addToHistory(h, m, s, operation, resultH, resultM, resultS) {
-            const operationSymbol = operation === 'add' ? '+' : operation === 'subtract' ? '-' : operation === 'multiply' ? '×' : '÷';
-            const entry = document.createElement("div");
-            entry.className = "history-entry";
-            entry.innerText = `${h}h ${m}m ${s}s ${operationSymbol} = ${resultH}h ${resultM}m ${resultS}s`;
-            historyElement.prepend(entry); // Adds entry to the beginning of history
+        function setInputValues(hours, minutes, seconds) {
+            document.getElementById("hours").value = hours;
+            document.getElementById("minutes").value = minutes;
+            document.getElementById("seconds").value = seconds;
         }
 
         function clearInputs() {
